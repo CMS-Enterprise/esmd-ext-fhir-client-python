@@ -1,0 +1,34 @@
+# EsmdFHIRClient Environment Variables Template
+# Set these environment variables for secure configuration
+# For development, you can create a .env file (not included in git)
+
+# Server Configuration
+export ESMD_FHIR_SERVER_URL="http://internal-esmd-dev-apps-986151145.us-east-1.elb.amazonaws.com:9012/fhir"
+export ESMD_PRESIGNED_URL_BASE="http://internal-esmd-dev-apps-986151145.us-east-1.elb.amazonaws.com:9016/fhir"
+export ESMD_TIMEOUT="30"
+
+# Authentication (REQUIRED)
+export ESMD_TOKEN_ENDPOINT="https://dev.cpiapigateway.cms.gov/api/esmdp/auth/generate"
+export ESMD_CLIENT_ID="your_client_id_here"
+export ESMD_CLIENT_SECRET="your_client_secret_here"
+export ESMD_SCOPE="hih/pullrcs"
+
+# Optional: Pre-existing access token (if available)
+# export ESMD_ACCESS_TOKEN="your_existing_token_here"
+
+# Organization Configuration
+export ESMD_ORG_OID="urn:oid:1.22.3.44"
+export ESMD_ORG_NAME="Your Organization Name"
+
+# Logging Configuration
+export ESMD_LOG_LEVEL="INFO"
+export ESMD_LOG_FILE="logs/esmd_fhir_client.log"
+
+# Optional: Environment Indicator
+export ESMD_ENVIRONMENT="development"
+
+# Usage:
+# 1. Copy this file: cp environment.template .env
+# 2. Edit .env with your actual values
+# 3. Source the file: source .env
+# Or use a tool like python-dotenv to load automatically 

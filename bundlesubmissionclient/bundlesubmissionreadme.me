@@ -1,0 +1,170 @@
+# BundleSubmissionClient
+
+## Overview
+
+The `BundleSubmissionClient` module provides an end-to-end workflow for submitting document bundles to an esMD FHIR server using pre-signed URLs. This module generates pre-signed URLs for document uploads, uploads documents, prepares FHIR bundles, and submits them to the server. It handles extensions, identifiers, and file uploads, including MD5 hash generation, file size calculation, and response processing.
+
+### Key Features:
+- Generate pre-signed URLs for file uploads.
+- Calculate and encode MD5 hashes for file integrity.
+- Upload files to a FHIR server using pre-signed URLs.
+- Build and submit FHIR bundles containing document references and associated metadata.
+- Process and validate responses from the FHIR server.
+
+## Prerequisites
+
+- Python 3.9+
+- External libraries specified in `requirements.txt` (e.g., `requests`, `hashlib`, `base64`).
+- A valid FHIR server endpoint that supports pre-signed URL generation and FHIR bundle submission.
+- A valid authentication mechanism to retrieve OAuth tokens (e.g., `EsmdAuthClient`).
+
+## Dependencies
+
+Ensure that the following Python libraries are installed in your environment:
+
+- `requests`
+- `json`
+- `hashlib`
+- `base64`
+- `os`
+- `random`
+- `string`
+- `logger`
+- `config_util`
+- `EsmdAuthClient`
+- `PresignedUrlUploader`
+- `PrepareEsmdBundleSubmissionData`
+- `EsmdBundleSubmission`
+- `EsmdFhirBundleSubmissionResponseProcessor`
+
+To install the required dependencies, run:
+
+```bash
+pip install -r requirements.txt
+```
+
+## Directory Structure
+
+```
+bundle_submission_client/
+│
+├── bundle_submission_client/
+│   ├── __init__.py
+│   ├── PresignedUrlGenerator.py
+│   ├── PresignedUrlUploader.py
+│   ├── PrepareEsmdBundleSubmissionData.py
+│   ├── EsmdBundleSubmission.py
+│   ├── EsmdFhirBundleSubmissionResponseProcessor.py
+│   ├── logger.py
+│   ├── config_util.py
+│   └── EsmdAuthClient.py
+│
+├── README.md
+├── requirements.txt
+└── setup.py
+```
+
+## Workflow
+
+1. **Pre-signed URL Generation**: The `PresignedUrlGenerator` class generates pre-signed URLs for the provided file paths. It sends a request to the FHIR server and retrieves the URLs, which are used to upload the files.
+
+2. **File Upload**: The `PresignedUrlUploader` class uploads the files using the pre-signed URLs. Each file is uploaded along with the appropriate headers, including the MD5 hash and file size.
+
+3. **Bundle Preparation**: The `PrepareEsmdBundleSubmissionData` class prepares the FHIR bundle by adding document references and metadata. This bundle includes information about the uploaded documents, such as their URLs, sizes, and hashes.
+
+4. **Bundle Submission**: The `EsmdBundleSubmission` class submits the prepared bundle to the FHIR server. The submission is done via a POST request, and the server's response is processed and validated.
+
+5. **Response Processing**: The `EsmdFhirBundleSubmissionResponseProcessor` class processes the server's response. It validates whether the server successfully created the resources and provides detailed output on the results.
+
+## Entry Point
+
+The entry point of the module is the `entry_point` method in the `PresignedUrlGenerator` class. This method orchestrates the entire workflow from pre-signed URL generation to bundle submission. 
+
+### Parameters
+
+- `extensions_data`: A dictionary containing the extensions required for the FHIR bundle submission. Example keys include `SenderOid`, `IntendedRecipient`, `LinesOfBusinessId`, etc.
+- `identifiers_data`: A dictionary containing the identifiers required for the FHIR bundle submission. Example keys include `UniqueIdSystem`, `UniqueIdValue`, `NpiSystem`, `NpiValue`, etc.
+- `filenames_with_path`: A list of strings representing the file paths that need to be uploaded.
+
+### Example Usage
+
+```python
+if __name__ == "__main__":
+    # Example extensions data
+    extensions_data = {
+        "SenderOid": "http://example.com/fhir/StructureDefinition/Esmd-Ext-SenderOid",
+        "SenderOidValue": "urn:oid:1.2.840.10008.3.1.2.1.1",
+        "IntendedRecipient": "http://example.com/fhir/StructureDefinition/Esmd-Ext-IntendedRecipient",
+        "IntendedRecipientValue": "urn:oid:2.16.840.1.113883.13.34.110.1.100.23"
+    }
+
+    # Example identifiers data
+    identifiers_data = {
+        "UniqueIdSystem": "http://example.com/fhir/StructureDefinition/Esmd-Ext-UniqueId",
+        "UniqueIdValue": "UNIQUE1234569"
+    }
+
+    # Example file paths
+    filenames_with_path = [
+        "c:/fhir/testd/pkpadmin.pdf",
+        "c:/fhir/testd/pkpadmin1.pdf"
+    ]
+
+    # Call the entry point
+    entry_point(extensions_data, identifiers_data, filenames_with_path)
+```
+
+## Logging
+
+All classes use the `setup_logger` utility to log information about the execution of the module. Logs are generated for each key step in the workflow, including:
+- Pre-signed URL generation.
+- File upload status.
+- Bundle preparation and submission.
+- Response validation.
+
+## Error Handling
+
+The module contains robust error handling to ensure any unexpected errors during the process are logged. Key points where error handling is applied:
+- Failed pre-signed URL generation.
+- File not found errors during upload.
+- Failed bundle submission due to network or server issues.
+- Unexpected response formats from the server.
+
+## How to Run
+
+1. **Ensure dependencies are installed** by running:
+
+```bash
+pip install -r requirements.txt
+```
+
+2. **Prepare your data** for `extensions_data`, `identifiers_data`, and `filenames_with_path`.
+
+3. **Run the entry point** with the required data by executing:
+
+```bash
+python bundle_submission_client/PresignedUrlGenerator.py
+```
+
+4. **Check logs** for detailed processing information and ensure that the files are uploaded and the FHIR bundle is successfully submitted.
+
+## Example Output
+
+The following output shows a successful pre-signed URL generation and file upload:
+
+```
+{
+  "status": "SUCCESS",
+  "message": "FILE UPLOADED SUCCESSFULLY",
+  "filename": "pkpadmin.pdf",
+  "s3uri": "s3://dev-esmd-qurantine/pkpadmin.pdf"
+}
+```
+
+## Extending the Module
+
+To extend the module for additional functionality (e.g., supporting new FHIR resources, customizing the bundle), you can:
+- Add new classes to handle different FHIR resource types.
+- Modify the `PrepareEsmdBundleSubmissionData` class to include additional fields in the bundle.
+- Implement custom validation or processing steps in the `EsmdFhirBundleSubmissionResponseProcessor` class.
+

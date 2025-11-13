@@ -176,7 +176,7 @@ def setup_test_environment():
         'ESMD_CLIENT_ID': '2rqs9danur3la1qp7n70cvqdva',
         'ESMD_CLIENT_SECRET': '23sl7tcqpbvdk83jihuh9e1d3c81crp74vnsccp0i95nijdi34d',
         'ESMD_TOKEN_ENDPOINT': 'https://dev.cpiapigateway.cms.gov/api/esmdp/auth/generate',
-        'ESMD_FHIR_SERVER_URL': 'https://dev.cpiapigateway.cms.gov/api/esmdf/v1/fhir/',
+        'ESMD_FHIR_SERVER_URL': 'https://dev.cpiapigateway.cms.gov/api/esmdf/v1/fhir',
         'ESMD_LOG_LEVEL': 'INFO'
     }
     

@@ -78,6 +78,94 @@ class PractitionerRequestSubmitter:
 
         return None
 
+    def send_practitioner_to_server(self, practitioner_json, fhir_base_url: str, token: str, timeout: int = 30):
+        """
+        Send a Practitioner resource directly to a FHIR server using the provided base URL and bearer token.
+
+        :param practitioner_json: Practitioner resource JSON (must include 'id').
+        :param fhir_base_url: Base URL of the FHIR server (e.g. https://example.org/fhir).
+        :param token: Bearer token to use for Authorization header.
+        :param timeout: Request timeout in seconds.
+        :return: Response JSON on success, or None on error.
+        """
+        if not practitioner_json:
+            self.logger.error("Empty practitioner JSON provided.")
+            return None
+        if not fhir_base_url or not token:
+            self.logger.error("fhir_base_url and token are required to send practitioner to server.")
+            return None
+
+        try:
+            headers = {
+                'Authorization': f'Bearer {token}',
+                'Content-Type': 'application/fhir+json',
+                'Accept': 'application/fhir+json'
+            }
+            url = f"{fhir_base_url.rstrip('/')}/Practitioner/{practitioner_json.get('id')}"
+            self.logger.info(f"Sending Practitioner to {url}")
+
+            resp = requests.put(url, headers=headers, json=practitioner_json, timeout=timeout)
+            resp.raise_for_status()
+            self.logger.debug(f"Response Status: {resp.status_code} | Content: {resp.text}")
+            return resp.json()
+
+        except requests.exceptions.HTTPError as errh:
+            self.logger.error(f"HTTP Error occurred while sending practitioner: {errh}, Status Code: {getattr(errh.response, 'status_code', 'N/A')}")
+        except requests.exceptions.ConnectionError as errc:
+            self.logger.error(f"Error Connecting while sending practitioner: {errc}")
+        except requests.exceptions.Timeout as errt:
+            self.logger.error(f"Timeout while sending practitioner: {errt}")
+        except requests.exceptions.RequestException as err:
+            self.logger.error(f"Request Error occurred while sending practitioner: {err}")
+        except Exception as e:
+            self.logger.exception(f"Unexpected error while sending practitioner: {e}")
+
+        return None
+
+    def send_bundle_to_server(self, bundle_json, fhir_base_url: str, token: str, timeout: int = 30):
+        """
+        Send a Bundle (batch) to a FHIR server using the provided base URL and bearer token.
+
+        :param bundle_json: Bundle JSON to post to the server.
+        :param fhir_base_url: Base URL of the FHIR server (e.g. https://example.org/fhir).
+        :param token: Bearer token for Authorization header.
+        :param timeout: Request timeout in seconds.
+        :return: Response JSON on success, or None on error.
+        """
+        if not bundle_json:
+            self.logger.error("Empty bundle JSON provided.")
+            return None
+        if not fhir_base_url or not token:
+            self.logger.error("fhir_base_url and token are required to send bundle to server.")
+            return None
+
+        try:
+            headers = {
+                'Authorization': f'Bearer {token}',
+                'Content-Type': 'application/fhir+json',
+                'Accept': 'application/fhir+json'
+            }
+            url = fhir_base_url.rstrip('/')
+            self.logger.info(f"Posting Bundle to {url}")
+
+            resp = requests.post(url, headers=headers, json=bundle_json, timeout=timeout)
+            resp.raise_for_status()
+            self.logger.debug(f"Response Status: {resp.status_code} | Content: {resp.text}")
+            return resp.json()
+
+        except requests.exceptions.HTTPError as errh:
+            self.logger.error(f"HTTP Error occurred while sending bundle: {errh}, Status Code: {getattr(errh.response, 'status_code', 'N/A')}")
+        except requests.exceptions.ConnectionError as errc:
+            self.logger.error(f"Error Connecting while sending bundle: {errc}")
+        except requests.exceptions.Timeout as errt:
+            self.logger.error(f"Timeout while sending bundle: {errt}")
+        except requests.exceptions.RequestException as err:
+            self.logger.error(f"Request Error occurred while sending bundle: {err}")
+        except Exception as e:
+            self.logger.exception(f"Unexpected error while sending bundle: {e}")
+
+        return None
+
     def submit_practitioner_bundle(self, bundle_practitioners_json):
         """
         Submit a list of Practitioner resources to the esMD FHIR server in a batch.
@@ -197,23 +285,23 @@ if __name__ == "__main__":
 
     practitioners_metadata_list = [practitioner_metadata_1, practitioner_metadata_2]
 
-    # # Create Bundle Practitioner resource
-    # bundle_practitioner = PreparePractitionerAndBundlePractitioner.create_practitioner_bundle(practitioners_metadata_list)
+    # Create Bundle Practitioner resource
+    bundle_practitioner = PreparePractitionerAndBundlePractitioner.create_practitioner_bundle(practitioners_metadata_list)
 
-    # # Submit the practitioner bundle
-    # print("Submitting Practitioner Bundle...")
-    # bundle_response = submitter.submit_practitioner_bundle(bundle_practitioner)
+    # Submit the practitioner bundle
+    print("Submitting Practitioner Bundle...")
+    bundle_response = submitter.submit_practitioner_bundle(bundle_practitioner)
 
-    # # Print the response
-    # if bundle_response:
-    #     print("Practitioner Bundle Submission Response:")
-    #     print(json.dumps(bundle_response, indent=2))
-    #     processor = FhirBatchResponseProcessor(bundle_response)
-    #     practitioner_response_list = processor.extract_practitioner_ids_with_status()
-    #     # Print the extracted practitioner information
-    #     print("Extracted Practitioner Information:", json.dumps(practitioner_response_list, indent=2))
-    # else:
-    #     print("Failed to submit the practitioner bundle.")
+    # Print the response
+    if bundle_response:
+        print("Practitioner Bundle Submission Response:")
+        print(json.dumps(bundle_response, indent=2))
+        processor = FhirBatchResponseProcessor(bundle_response)
+        practitioner_response_list = processor.extract_practitioner_ids_with_status()
+        # Print the extracted practitioner information
+        print("Extracted Practitioner Information:", json.dumps(practitioner_response_list, indent=2))
+    else:
+        print("Failed to submit the practitioner bundle.")
 
     
     # Test Practitioner Resource Functionality
@@ -221,7 +309,7 @@ if __name__ == "__main__":
     for practitioner in practitioners_metadata_list:
         print(f"Testing Practitioner: {practitioner['id']}")
         # Submit the practitioner bundle
-        print("Submitting Practitioner Bundle...")
+        print("Submitting Practitioner Request...")
         practitioner_response = submitter.submit_practitioner(practitioner)
         if practitioner_response:
             print("Practitioner Submission Response:")

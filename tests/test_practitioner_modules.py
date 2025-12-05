@@ -2,6 +2,7 @@
 Unit tests for all practitioner modules in practitionerclient.
 """
 
+from unittest import result
 import pytest
 import json
 import requests
@@ -9,7 +10,7 @@ from unittest.mock import Mock, patch, MagicMock, mock_open
 from practitionerclient.EsmdPractitionerRequestSubmitter import PractitionerRequestSubmitter
 from practitionerclient.EsmdPractitionerResponse import FhirBatchResponseProcessor
 from practitionerclient.PractitionerMetadata import PractitionerMetadata
-
+from practitionerclient.PractitionerMetadata import PreparePractitionerAndBundlePractitioner
 
 class TestPractitionerRequestSubmitter:
     """Test cases for PractitionerRequestSubmitter class."""
@@ -62,101 +63,101 @@ class TestPractitionerRequestSubmitter:
             "birthDate": "1980-01-15"
         }
     
-#     def test_init(self, submitter, mock_dependencies):
-#         """Test PractitionerRequestSubmitter initialization."""
-#         assert submitter.base_url == "http://test-server:9012/fhir"
-#         assert submitter.config_util is not None
-#         assert submitter.auth_client is not None
+    def test_init(self, submitter, mock_dependencies):
+        """Test PractitionerRequestSubmitter initialization."""
+        assert submitter.base_url == "http://test-server:9012/fhir"
+        assert submitter.config_util is not None
+        assert submitter.auth_client is not None
     
-#     @patch('practitionerclient.EsmdPractitionerRequestSubmitter.requests.put')
-#     def test_submit_practitioner_success(self, mock_put, submitter, sample_practitioner_data):
-#         """Test successful practitioner submission."""
-#         # Mock successful response
-#         mock_response = Mock()
-#         mock_response.status_code = 201
-#         mock_response.json.return_value = {
-#             "resourceType": "Practitioner",
-#             "id": "created-practitioner-001"
-#         }
-#         mock_put.return_value = mock_response
+    @patch('practitionerclient.EsmdPractitionerRequestSubmitter.requests.put')
+    def test_submit_practitioner_success(self, mock_put, submitter, sample_practitioner_data):
+        """Test successful practitioner submission."""
+        # Mock successful response
+        mock_response = Mock()
+        mock_response.status_code = 201
+        mock_response.json.return_value = {
+            "resourceType": "Practitioner",
+            "id": "created-practitioner-001"
+        }
+        mock_put.return_value = mock_response
         
-#         result = submitter.submit_practitioner(sample_practitioner_data)
+        result = submitter.submit_practitioner(sample_practitioner_data)
         
-#         assert result is not None
-#         assert result["id"] == "created-practitioner-001"
+        assert result is not None
+        assert result["id"] == "created-practitioner-001"
         
-#         # Verify request
-#         mock_put.assert_called_once()
-#         call_args = mock_put.call_args
-#         assert "Practitioner" in call_args[0][0]
-#         assert call_args[1]['headers']['Authorization'] == 'Bearer test_access_token'
-#         assert call_args[1]['headers']['Content-Type'] == 'application/fhir+json'
+        # Verify request
+        mock_put.assert_called_once()
+        call_args = mock_put.call_args
+        assert "Practitioner" in call_args[0][0]
+        assert call_args[1]['headers']['Authorization'] == 'Bearer test_access_token'
+        assert call_args[1]['headers']['Content-Type'] == 'application/fhir+json'
     
-#     def test_submit_practitioner_no_token(self, submitter, sample_practitioner_data, caplog):
-#         """Test practitioner submission without token."""
-#         submitter.auth_client.get_token.return_value = None
+    def test_submit_practitioner_no_token(self, submitter, sample_practitioner_data, caplog):
+        """Test practitioner submission without token."""
+        submitter.auth_client.get_token.return_value = None
         
-#         result = submitter.submit_practitioner(sample_practitioner_data)
+        result = submitter.submit_practitioner(sample_practitioner_data)
         
-#         assert result is None
-#         assert "No access token could be retrieved" in caplog.text
+        assert result is None
+        assert "No access token could be retrieved" in caplog.text
     
-#     @patch('practitionerclient.EsmdPractitionerRequestSubmitter.requests.post')
-#     def test_submit_practitioner_http_error(self, mock_post, submitter, sample_practitioner_data, caplog):
-#         """Test practitioner submission with HTTP error."""
-#         caplog.set_level('ERROR', logger=submitter.logger.name)
-#         mock_response = Mock()
-#         mock_response.status_code = 400
-#         mock_response.text = "Bad Request"
-#         mock_post.return_value = mock_response
+    @patch('practitionerclient.EsmdPractitionerRequestSubmitter.requests.post')
+    def test_submit_practitioner_http_error(self, mock_post, submitter, sample_practitioner_data, caplog):
+        """Test practitioner submission with HTTP error."""
+        caplog.set_level('ERROR', logger=submitter.logger.name)
+        mock_response = Mock()
+        mock_response.status_code = 400
+        mock_response.text = "Bad Request"
+        mock_post.return_value = mock_response
         
-#         result = submitter.submit_practitioner(sample_practitioner_data)
+        result = submitter.submit_practitioner(sample_practitioner_data)
         
-#         assert result is None
-#         assert "Error " in caplog.text
+        assert result is None
+        assert "Error " in caplog.text
     
-#     @patch('practitionerclient.EsmdPractitionerRequestSubmitter.requests.post')
-#     def test_submit_batch_practitioners(self, mock_post, submitter):
-#         """Test batch practitioner submission."""
-#         batch_data = {
-#             "resourceType": "Bundle",
-#             "type": "batch",
-#             "entry": [
-#                 {
-#                     "resource": {
-#                         "resourceType": "Practitioner",
-#                         "id": "practitioner-001"
-#                     },
-#                     "request": {
-#                         "method": "POST",
-#                         "url": "Practitioner"
-#                     }
-#                 },
-#                 {
-#                     "resource": {
-#                         "resourceType": "Practitioner", 
-#                         "id": "practitioner-002"
-#                     },
-#                     "request": {
-#                         "method": "POST",
-#                         "url": "Practitioner"
-#                     }
-#                 }
-#             ]
-#         }
+    @patch('practitionerclient.EsmdPractitionerRequestSubmitter.requests.post')
+    def test_submit_batch_practitioners(self, mock_post, submitter):
+        """Test batch practitioner submission."""
+        batch_data = {
+            "resourceType": "Bundle",
+            "type": "batch",
+            "entry": [
+                {
+                    "resource": {
+                        "resourceType": "Practitioner",
+                        "id": "practitioner-001"
+                    },
+                    "request": {
+                        "method": "POST",
+                        "url": "Practitioner"
+                    }
+                },
+                {
+                    "resource": {
+                        "resourceType": "Practitioner", 
+                        "id": "practitioner-002"
+                    },
+                    "request": {
+                        "method": "POST",
+                        "url": "Practitioner"
+                    }
+                }
+            ]
+        }
         
-#         mock_response = Mock()
-#         mock_response.status_code = 200
-#         mock_response.json.return_value = {
-#             "resourceType": "Bundle",
-#             "type": "batch-response"
-#         }
-#         mock_post.return_value = mock_response
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "resourceType": "Bundle",
+            "type": "batch-response"
+        }
+        mock_post.return_value = mock_response
         
-#         result = submitter.submit_practitioner_bundle(batch_data)
+        result = submitter.submit_practitioner_bundle(batch_data)
         
-#         assert result is not None
-#         assert result["type"] == "batch-response"
+        assert result is not None
+        assert result["type"] == "batch-response"
 
 
 class TestFhirBatchResponseProcessor:
@@ -223,12 +224,12 @@ class TestFhirBatchResponseProcessor:
             ]
         }
     
-#     def test_init(self, sample_batch_response_success):
-#         """Test FhirBatchResponseProcessor initialization."""
-#         processor = FhirBatchResponseProcessor(sample_batch_response_success)        
+    def test_init(self, sample_batch_response_success):
+        """Test FhirBatchResponseProcessor initialization."""
+        processor = FhirBatchResponseProcessor(sample_batch_response_success)        
         
-#         assert processor.bundle_response == sample_batch_response_success
-#         assert processor.logger is not None
+        assert processor.bundle_response == sample_batch_response_success
+        assert processor.logger is not None
     
     def test_process_response_success(self, sample_batch_response_success):
         """Test processing successful batch response."""
@@ -245,355 +246,391 @@ class TestFhirBatchResponseProcessor:
         """Test processing batch response with mixed results."""
         processor = FhirBatchResponseProcessor(sample_batch_response_mixed)
         
-        result = processor.process_response()
+        result = processor.extract_practitioner_ids_with_status()
         
         print(f"result, {result}")
-        assert result["valid"] is False  # Has failures
-        assert result["total_entries"] == 2
-        assert result["successful_entries"] == 1
-        assert result["failed_entries"] == 1
+        
+        assert len(result) == 2
+        assert result[0]['status'] == '201 Created'
+        assert result[1]['status'] == '400 Bad Request'
     
-#     def test_process_response_invalid_bundle(self):
-#         """Test processing invalid bundle."""
-#         invalid_bundle = {"resourceType": "Patient"}  # Not a Bundle
-#         processor = FhirBatchResponseProcessor(invalid_bundle)
+    def test_process_response_invalid_bundle(self, caplog):
+        """Test processing invalid bundle."""
+        invalid_bundle = {"resourceType": "Patient"}  # Not a Bundle
+        caplog.set_level('ERROR', logger='practitionerclient.EsmdPractitionerResponse.FhirBatchResponseProcessor')
+        processor = FhirBatchResponseProcessor(invalid_bundle)
+        print(f"result, {processor}")
+        result = processor.extract_practitioner_ids_with_status()
+
+        assert "Missing 'resourceType' or 'entry'" in caplog.text
+
+    def test_process_response_no_entries(self, caplog):
+        """Test processing bundle without entries."""
+        empty_bundle = {
+            "resourceType": "Bundle",
+            "type": "batch-response"
+        }
+        caplog.set_level('ERROR', logger='practitionerclient.EsmdPractitionerResponse.FhirBatchResponseProcessor')
+        processor = FhirBatchResponseProcessor(empty_bundle)
         
-#         result = processor.process_response()
+        result = processor.extract_practitioner_ids_with_status()
+        assert "Missing 'resourceType' or 'entry'" in caplog.text
+
+    def test_extract_successful_practitioners(self, sample_batch_response_success):
+        """Test extracting successful practitioners."""
+        processor = FhirBatchResponseProcessor(sample_batch_response_success)
+
+        practitioners = processor.extract_practitioner_ids_with_status()
         
-#         assert result["valid"] is False
-#         assert "Not a valid Bundle" in result["message"]
+        print(f"practitioners, {practitioners}")
+        assert len(practitioners) == 2
+        assert practitioners[0]["practitioner_id"] == "123"
+        assert practitioners[1]["practitioner_id"] == "456"
     
-#     def test_process_response_no_entries(self):
-#         """Test processing bundle without entries."""
-#         empty_bundle = {
-#             "resourceType": "Bundle",
-#             "type": "batch-response"
-#         }
-#         processor = FhirBatchResponseProcessor(empty_bundle)
+    def test_extract_failed_operations(self, sample_batch_response_mixed):
+        """Test extracting failed operations."""
+        processor = FhirBatchResponseProcessor(sample_batch_response_mixed)
         
-#         result = processor.process_response()
-        
-#         assert result["valid"] is True
-#         assert result["total_entries"] == 0
-    
-#     def test_extract_successful_practitioners(self, sample_batch_response_success):
-#         """Test extracting successful practitioners."""
-#         processor = FhirBatchResponseProcessor(sample_batch_response_success)
-        
-#         practitioners = processor.extract_successful_practitioners()
-        
-#         assert len(practitioners) == 2
-#         assert practitioners[0]["id"] == "123"
-#         assert practitioners[1]["id"] == "456"
-    
-#     def test_extract_failed_operations(self, sample_batch_response_mixed):
-#         """Test extracting failed operations."""
-#         processor = FhirBatchResponseProcessor(sample_batch_response_mixed)
-        
-#         failures = processor.extract_failed_operations()
-        
-#         assert len(failures) == 1
-#         assert failures[0]["status"] == "400 Bad Request"
-#         assert "Invalid practitioner data" in failures[0]["diagnostics"]
-    
-#     def test_get_summary_statistics(self, sample_batch_response_mixed):
-#         """Test getting summary statistics."""
-#         processor = FhirBatchResponseProcessor(sample_batch_response_mixed)
-        
-#         stats = processor.get_summary_statistics()
-        
-#         assert stats["total"] == 2
-#         assert stats["successful"] == 1
-#         assert stats["failed"] == 1
-#         assert stats["success_rate"] == 50.0
+        failures = processor.extract_practitioner_ids_with_status()
+        print(f"failures, {failures}")        
+        assert failures[1]["status"] == "400 Bad Request"   
 
 
-# class TestPractitionerMetadata:
-#     """Test cases for PractitionerMetadata class."""
+class TestPractitionerMetadata:
+    """Test cases for PractitionerMetadata class."""
     
-#     @pytest.fixture
-#     def sample_practitioner_data(self):
-#         """Sample practitioner data."""
-#         return {
-#             "resourceType": "Practitioner",
-#             "id": "practitioner-001",
-#             "identifier": [
-#                 {
-#                     "system": "http://hl7.org/fhir/sid/us-npi",
-#                     "value": "1234567890"
-#                 }
-#             ],
-#             "name": [
-#                 {
-#                     "family": "Smith",
-#                     "given": ["John", "Michael"],
-#                     "prefix": ["Dr."],
-#                     "suffix": ["MD"]
-#                 }
-#             ],
-#             "gender": "male",
-#             "birthDate": "1980-01-15",
-#             "qualification": [
-#                 {
-#                     "code": {
-#                         "coding": [
-#                             {
-#                                 "system": "http://terminology.hl7.org/CodeSystem/v2-0360",
-#                                 "code": "MD",
-#                                 "display": "Doctor of Medicine"
-#                             }
-#                         ]
-#                     }
-#                 }
-#             ]
-#         }
+    @pytest.fixture
+    def sample_practitioner_data(self):
+        """Sample practitioner data shaped to match the PractitionerMetadata dataclass fields."""
+        return {
+            "family_name": "Smith",
+            "given_name": ["John", "Michael"],
+            "npi": "1234567890",
+            "action_requested": "A",
+            "service_code": "EEP",
+            "active": True,
+            "provider_number": "5432112345",
+            "provider_taxid": "TAXID123",
+            "service_start_date": "2024-01-01",
+            "service_end_date": "2024-12-31",
+            "gender": "male",
+            "birthdate": "1980-01-15",
+            "telecom": [
+                {"system": "phone", "value": "555-123-4567", "use": "work"}
+            ],
+            "qualification": [
+                {"code": "MD", "display": "Doctor of Medicine"}
+            ],
+            "address": [
+                {
+                    "line": ["123 Main St"],
+                    "city": "Springfield",
+                    "state": "IL",
+                    "postalCode": "62701",
+                    "country": "USA"
+                }
+            ]
+        }
+    @pytest.fixture
+    def sample_practitioner_data_missing_npi(self):
+        """Sample practitioner data shaped to match the PractitionerMetadata dataclass fields."""
+        return {
+            "family_name": "Smith",
+            "given_name": ["John", "Michael"],
+            "action_requested": "A",
+            "service_code": "EEP",
+            "active": True,
+            "provider_number": "5432112345",
+            "provider_taxid": "TAXID123",
+            "service_start_date": "2024-01-01",
+            "service_end_date": "2024-12-31",
+            "gender": "male",
+            "birthdate": "1980-01-15",
+            "telecom": [
+                {"system": "phone", "value": "555-123-4567", "use": "work"}
+            ],
+            "qualification": [
+                {"code": "MD", "display": "Doctor of Medicine"}
+            ],
+            "address": [
+                {
+                    "line": ["123 Main St"],
+                    "city": "Springfield",
+                    "state": "IL",
+                    "postalCode": "62701",
+                    "country": "USA"
+                }
+            ]
+        }
     
-#     def test_init(self, sample_practitioner_data):
-#         """Test PractitionerMetadata initialization."""
-#         metadata = PractitionerMetadata(sample_practitioner_data)
-        
-#         assert metadata.practitioner_data == sample_practitioner_data
-#         assert metadata.logger is not None
-    
-#     def test_get_npi_number(self, sample_practitioner_data):
-#         """Test extracting NPI number."""
-#         metadata = PractitionerMetadata(sample_practitioner_data)
-        
-#         npi = metadata.get_npi_number()
-        
-#         assert npi == "1234567890"
-    
-#     def test_get_npi_number_not_found(self):
-#         """Test NPI extraction when not found."""
-#         data_without_npi = {
-#             "resourceType": "Practitioner",
-#             "identifier": [
-#                 {
-#                     "system": "http://other.system",
-#                     "value": "OTHER123"
-#                 }
-#             ]
-#         }
-#         metadata = PractitionerMetadata(data_without_npi)
-        
-#         npi = metadata.get_npi_number()
-        
-#         assert npi is None
-    
-#     def test_get_full_name(self, sample_practitioner_data):
-#         """Test getting full name."""
-#         metadata = PractitionerMetadata(sample_practitioner_data)
-        
-#         full_name = metadata.get_full_name()
-        
-#         assert "Dr." in full_name
-#         assert "John" in full_name
-#         assert "Michael" in full_name
-#         assert "Smith" in full_name
-#         assert "MD" in full_name
-    
-#     def test_get_gender(self, sample_practitioner_data):
-#         """Test getting gender."""
-#         metadata = PractitionerMetadata(sample_practitioner_data)
-        
-#         gender = metadata.get_gender()
-        
-#         assert gender == "male"
-    
-#     def test_get_birth_date(self, sample_practitioner_data):
-#         """Test getting birth date."""
-#         metadata = PractitionerMetadata(sample_practitioner_data)
-        
-#         birth_date = metadata.get_birth_date()
-        
-#         assert birth_date == "1980-01-15"
-    
-#     def test_get_qualifications(self, sample_practitioner_data):
-#         """Test getting qualifications."""
-#         metadata = PractitionerMetadata(sample_practitioner_data)
-        
-#         qualifications = metadata.get_qualifications()
-        
-#         assert len(qualifications) == 1
-#         assert qualifications[0]["code"] == "MD"
-#         assert qualifications[0]["display"] == "Doctor of Medicine"
-    
-#     def test_validate_required_fields(self, sample_practitioner_data):
-#         """Test validation of required fields."""
-#         metadata = PractitionerMetadata(sample_practitioner_data)
-        
-#         is_valid, missing_fields = metadata.validate_required_fields()
-        
-#         assert is_valid is True
-#         assert len(missing_fields) == 0
-    
-#     def test_validate_required_fields_missing(self):
-#         """Test validation with missing required fields."""
-#         incomplete_data = {
-#             "resourceType": "Practitioner"
-#             # Missing identifier, name
-#         }
-#         metadata = PractitionerMetadata(incomplete_data)
-        
-#         is_valid, missing_fields = metadata.validate_required_fields()
-        
-#         assert is_valid is False
-#         assert "identifier" in missing_fields
-#         assert "name" in missing_fields
-    
-#     def test_get_formatted_summary(self, sample_practitioner_data):
-#         """Test getting formatted summary."""
-#         metadata = PractitionerMetadata(sample_practitioner_data)
-        
-#         summary = metadata.get_formatted_summary()
-        
-#         assert "NPI" in summary
-#         assert "1234567890" in summary
-#         assert "Dr. John Michael Smith MD" in summary
-#         assert "male" in summary
-#         assert "1980-01-15" in summary
-    
-#     def test_to_dict(self, sample_practitioner_data):
-#         """Test converting to dictionary."""
-#         metadata = PractitionerMetadata(sample_practitioner_data)
-        
-#         result_dict = metadata.to_dict()
-        
-#         assert result_dict["npi"] == "1234567890"
-#         assert result_dict["full_name"] == "Dr. John Michael Smith MD"
-#         assert result_dict["gender"] == "male"
-#         assert result_dict["birth_date"] == "1980-01-15"
-#         assert len(result_dict["qualifications"]) == 1
-    
-#     def test_compare_practitioners(self, sample_practitioner_data):
-#         """Test comparing practitioners."""
-#         metadata1 = PractitionerMetadata(sample_practitioner_data)
-        
-#         # Create slightly different practitioner
-#         different_data = sample_practitioner_data.copy()
-#         different_data["gender"] = "female"
-#         metadata2 = PractitionerMetadata(different_data)
-        
-#         differences = metadata1.compare_with(metadata2)
-        
-#         assert "gender" in differences
-#         assert differences["gender"]["self"] == "male"
-#         assert differences["gender"]["other"] == "female"
-    
-#     def test_is_complete_profile(self, sample_practitioner_data):
-#         """Test checking if profile is complete."""
-#         metadata = PractitionerMetadata(sample_practitioner_data)
-        
-#         is_complete = metadata.is_complete_profile()
-        
-#         assert is_complete is True
-    
-#     def test_is_complete_profile_incomplete(self):
-#         """Test incomplete profile check."""
-#         incomplete_data = {
-#             "resourceType": "Practitioner",
-#             "identifier": [
-#                 {
-#                     "system": "http://hl7.org/fhir/sid/us-npi",
-#                     "value": "1234567890"
-#                 }
-#             ]
-#             # Missing name, gender, birthDate
-#         }
-#         metadata = PractitionerMetadata(incomplete_data)
-        
-#         is_complete = metadata.is_complete_profile()
-        
-#         assert is_complete is False
+    def test_init(self, sample_practitioner_data):
+        """Test PractitionerMetadata initialization."""
+        # Construct dataclass using keyword unpacking of the fixture dict
+        metadata = PractitionerMetadata(**sample_practitioner_data)
+
+        # Assert key fields were set correctly on the dataclass
+        assert metadata.family_name == sample_practitioner_data["family_name"]
+        assert metadata.given_name == sample_practitioner_data["given_name"]
+        assert metadata.npi == sample_practitioner_data["npi"]
+        assert metadata.action_requested == sample_practitioner_data["action_requested"]
+        assert metadata.service_code == sample_practitioner_data["service_code"]
+
+    def test_missing_npi(self, sample_practitioner_data_missing_npi):
+        """Test PractitionerMetadata initialization with missing NPI."""
+        # Missing required 'npi' should raise a TypeError from the dataclass constructor
+        with pytest.raises(TypeError):
+            PractitionerMetadata(**sample_practitioner_data_missing_npi)
 
 
-# @pytest.mark.integration
-# class TestPractitionerModulesIntegration:
-#     """Integration tests for practitioner modules."""
+    def test_validate_required_fields_missing(self, caplog):
+        """Test validation with missing required fields."""
+        incomplete_data = {
+            "resourceType": "Practitioner"
+            # Missing identifier, name
+        }
+        # Constructing the dataclass with incomplete data should raise TypeError
+        with pytest.raises(TypeError) as excinfo:
+            PractitionerMetadata(**incomplete_data)
+
+        # The dataclass will raise TypeError for an unexpected keyword ('resourceType')
+        msg = str(excinfo.value).lower()
+        print(f"msg, {msg}")
+        assert "unexpected keyword" in msg or "got an unexpected keyword argument" in msg
+        # message should reference the resourceType key we passed
+        assert "resourcetype" in msg or "resource" in msg
+        
+
+
+@pytest.mark.integration
+def test_integration_create_and_submit_practitioners():
+    """Integration-style test: create practitioners from dataclasses, assert resource details, bundle and submit."""
+    # Import the helper and dataclass from the module under test
+    from practitionerclient.PractitionerMetadata import PreparePractitionerAndBundlePractitioner, PractitionerMetadata as PM
+
+    # Create two PractitionerMetadata dataclass instances (mirror example usage)
+    p1_dc = PM(
+        family_name="Doe",
+        given_name=["John"],
+        gender="male",
+        npi="1234567890",
+        provider_number="5432112345",
+        provider_taxid="TAXID123",
+        action_requested="A",
+        service_code="EEP",
+        service_start_date="2024-01-01",
+        service_end_date="2024-01-31",
+        address=[{
+            "line": ["123 Main St"],
+            "city": "Springfield",
+            "state": "IL",
+            "postalCode": "62701",
+            "country": "USA"
+        }],
+        telecom=[{"system": "phone", "value": "555-123-4567", "use": "work"}]
+    )
+
+    p2_dc = PM(
+        family_name="Smith",
+        given_name=["Jane"],
+        gender="female",
+        npi="9876543210",
+        provider_number="5432112345",
+        provider_taxid="TAXID987",
+        action_requested="A",
+        service_code="EEP",
+        service_start_date="2024-02-01",
+        service_end_date="2024-02-28",
+        address=[{
+            "line": ["456 Oak Ave"],
+            "city": "Springfield",
+            "state": "IL",
+            "postalCode": "62702",
+            "country": "USA"
+        }],
+        telecom=[{"system": "phone", "value": "555-987-6543", "use": "work"}]
+    )
+
+    # Use the Prepare helper to create FHIR Practitioner resources
+    prep1 = PreparePractitionerAndBundlePractitioner(p1_dc)
+    prep2 = PreparePractitionerAndBundlePractitioner(p2_dc)
+
+    practitioner1 = prep1.create_practitioner()
+    practitioner2 = prep2.create_practitioner()
+
+    # Basic structure assertions
+    assert practitioner1["resourceType"] == "Practitioner"
+    assert "id" in practitioner1 and practitioner1["id"]
+    assert practitioner1["name"][0]["family"] == "Doe"
+    assert practitioner1["name"][0]["given"] == ["John"]
+    assert practitioner1.get("telecom") and practitioner1["telecom"][0]["value"] == "555-123-4567"
+
+    # Extension assertions: NPI should be present as an extension
+    npi_exts = [e for e in practitioner1.get("extension", []) if e.get("url", "").endswith("Esmd-Ext-NPI")]
+    assert len(npi_exts) == 1
+    assert npi_exts[0]["valueString"] == "1234567890"
+
+    # Build a bundle and assert entries
+    bundle = PreparePractitionerAndBundlePractitioner.create_practitioner_bundle([practitioner1, practitioner2])
+    assert bundle["resourceType"] == "Bundle"
+    assert bundle["type"] == "batch"
+    assert isinstance(bundle.get("entry"), list) and len(bundle["entry"]) == 2
+
+    # Patch configuration and auth client so PractitionerRequestSubmitter can be constructed
+    with patch('practitionerclient.EsmdPractitionerRequestSubmitter.ConfigUtility') as mock_config, \
+         patch('practitionerclient.EsmdPractitionerRequestSubmitter.EsmdAuthClient') as mock_auth:
+
+        mock_config_instance = Mock()
+        mock_config_instance.get_fhir_server_url.return_value = "http://test-server:9012/fhir"
+        mock_config.return_value = mock_config_instance
+
+        mock_auth_instance = Mock()
+        mock_auth_instance.get_token.return_value = "test_access_token"
+        mock_auth.return_value = mock_auth_instance
+
+        # Mock the HTTP call during submission and verify submit_practitioner uses the Practitioner id in the URL
+        with patch('practitionerclient.EsmdPractitionerRequestSubmitter.requests.put') as mock_put:
+            mock_response = Mock()
+            mock_response.status_code = 200
+            mock_response.json.return_value = {"resourceType": "Practitioner", "id": practitioner1["id"]}
+            mock_put.return_value = mock_response
+
+            submitter = PractitionerRequestSubmitter()
+            result = submitter.submit_practitioner(practitioner1)
+
+            assert result is not None
+            assert result["id"] == practitioner1["id"]
+
+            # Verify the HTTP PUT call used the expected URL containing Practitioner/<id>
+            mock_put.assert_called_once()
+            called_url = mock_put.call_args[0][0]
+            assert f"Practitioner/{practitioner1['id']}" in called_url
+
+
+
+@pytest.mark.integration
+class TestPractitionerModulesIntegration:
+    """Integration tests for practitioner modules."""
     
-#     def test_end_to_end_practitioner_workflow(self):
-#         """Test complete practitioner workflow."""
-#         # Sample practitioner data
-#         practitioner_data = {
-#             "resourceType": "Practitioner",
-#             "identifier": [
-#                 {
-#                     "system": "http://hl7.org/fhir/sid/us-npi",
-#                     "value": "9876543210"
-#                 }
-#             ],
-#             "name": [
-#                 {
-#                     "family": "Johnson",
-#                     "given": ["Jane"],
-#                     "prefix": ["Dr."]
-#                 }
-#             ],
-#             "gender": "female"
-#         }
+    def test_end_to_end_practitioner_workflow(self):
+        """Test complete practitioner workflow."""
+        # Sample practitioner data
+        practitioner_data = PractitionerMetadata(
+        family_name="Doe",
+        given_name=["John"],
+        gender="male",
+        npi="1234567890",
+        provider_number="5432112345",
+        provider_taxid="TAXID123",
+        action_requested="A",
+        service_code="EEP",
+        service_start_date="2024-01-01",
+        service_end_date="2024-01-31",
+        address=[{
+            "line": ["123 Main St"],
+            "city": "Springfield",
+            "state": "IL",
+            "postalCode": "62701",
+            "country": "USA"
+        }],
+        telecom=[{"system": "phone", "value": "555-123-4567", "use": "work"}]
+    )
+     # create FHIR resource using the project helper
         
-#         # Test metadata extraction
-#         metadata = PractitionerMetadata(practitioner_data)
-#         assert metadata.get_npi_number() == "9876543210"
-#         assert "Dr. Jane Johnson" in metadata.get_full_name()
+        prep = PreparePractitionerAndBundlePractitioner(practitioner_data)
+        practitioner_resource = prep.create_practitioner()
+
+        # submit using the submitter (instance of PractitionerRequestSubmitter)
+        submitter = PractitionerRequestSubmitter()
+        print("Submitting Practitioner Request...")
+        practitioner_response = submitter.submit_practitioner(practitioner_resource)
+        print(f"practitioner_response: {practitioner_response}")
         
-#         # Test validation
-#         is_valid, missing = metadata.validate_required_fields()
-#         assert is_valid is True
         
-#         # Mock submission test
-#         with patch('practitionerclient.EsmdPractitionerRequestSubmitter.requests.post') as mock_post:
-#             mock_response = Mock()
-#             mock_response.status_code = 201
-#             mock_response.json.return_value = {
-#                 "resourceType": "Practitioner",
-#                 "id": "created-123"
-#             }
-#             mock_post.return_value = mock_response
-            
-#             submitter = PractitionerRequestSubmitter()
-#             result = submitter.submit_practitioner(practitioner_data)
-            
-#             assert result["id"] == "created-123"
+        if practitioner_response:
+            print("Practitioner Submission Response:")
+        else:
+            print("Failed to submit the practitioner.")
     
-#     def test_batch_processing_workflow(self):
-#         """Test batch processing workflow."""
-#         # Create batch response
-#         batch_response = {
-#             "resourceType": "Bundle",
-#             "type": "batch-response",
-#             "entry": [
-#                 {
-#                     "response": {
-#                         "status": "201 Created",
-#                         "location": "Practitioner/batch-001"
-#                     },
-#                     "resource": {
-#                         "resourceType": "Practitioner",
-#                         "id": "batch-001",
-#                         "identifier": [
-#                             {
-#                                 "system": "http://hl7.org/fhir/sid/us-npi",
-#                                 "value": "1111111111"
-#                             }
-#                         ]
-#                     }
-#                 }
-#             ]
-#         }
+    
+    
+    def test_batch_processing_end_to_end_workflow(self):
+        """Test batch processing workflow."""
+        # Create batch response
+    practitioner1_dc = PractitionerMetadata(
+        family_name="Doe",
+        given_name=["John"],
+        gender="male",
+        npi="1234567890",
+        provider_number="5432112345",
+        provider_taxid="TAXID123",
+        action_requested="A",
+        service_code="EEP",
+        service_start_date="2024-01-01",
+        service_end_date="2024-01-31",
+        address=[{
+            "line": ["123 Main St"],
+            "city": "Springfield",
+            "state": "IL",
+            "postalCode": "62701",
+            "country": "USA"
+        }],
+        telecom=[{
+            "system": "phone",
+            "value": "555-123-4567",
+            "use": "work"
+        }]
+    )
+
+    practitioner2_dc = PractitionerMetadata(
+        family_name="Smith",
+        given_name=["Jane"],
+        gender="female",
+        npi="9876543210",
+        provider_number="5432112345",
+        provider_taxid="TAXID987",
+        action_requested="A",
+        service_code="EEP",
+        service_start_date="2024-02-01",
+        service_end_date="2024-02-28",
+        address=[{
+            "line": ["456 Oak Ave"],
+            "city": "Springfield",
+            "state": "IL",
+            "postalCode": "62702",
+            "country": "USA"
+        }],
+        telecom=[{
+            "system": "phone",
+            "value": "555-987-6543",
+            "use": "work"
+        }]
+    )
         
-#         # Process response
-#         processor = FhirBatchResponseProcessor(batch_response)
-#         result = processor.process_response()
-        
-#         assert result["valid"] is True
-#         assert result["successful_entries"] == 1
-        
-#         # Extract successful practitioners
-#         practitioners = processor.extract_successful_practitioners()
-#         assert len(practitioners) == 1
-        
-#         # Analyze metadata
-#         for practitioner in practitioners:
-#             metadata = PractitionerMetadata(practitioner)
-#             assert metadata.get_npi_number() == "1111111111" 
+    # Use PreparePractitionerAndBundlePractitioner to create resources
+    prep1 = PreparePractitionerAndBundlePractitioner(practitioner1_dc)
+    prep2 = PreparePractitionerAndBundlePractitioner(practitioner2_dc)
+
+    practitioner_metadata_1 = prep1.create_practitioner()
+    practitioner_metadata_2 = prep2.create_practitioner()
+
+    practitioners_metadata_list = [practitioner_metadata_1, practitioner_metadata_2]
+
+    # Create Bundle Practitioner resource
+    bundle_practitioner = PreparePractitionerAndBundlePractitioner.create_practitioner_bundle(practitioners_metadata_list)
+
+    # Submit the practitioner bundle
+    print("Submitting Practitioner Bundle...")
+    # submit using the submitter (instance of PractitionerRequestSubmitter)
+    submitter = PractitionerRequestSubmitter()
+    bundle_response = submitter.submit_practitioner_bundle(bundle_practitioner)
+
+    # Print the response
+    if bundle_response:
+        print("Practitioner Bundle Submission Response:")
+        print(json.dumps(bundle_response, indent=2))
+        processor = FhirBatchResponseProcessor(bundle_response)
+        practitioner_response_list = processor.extract_practitioner_ids_with_status()
+        # Print the extracted practitioner information
+        print("Extracted Practitioner Information:", json.dumps(practitioner_response_list, indent=2))
+    else:
+        print("Failed to submit the practitioner bundle.")

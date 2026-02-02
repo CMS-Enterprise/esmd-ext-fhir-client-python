@@ -1,3 +1,4 @@
+from platform import processor
 import requests
 import json
 from esmd_shared.logger import setup_logger
@@ -19,18 +20,32 @@ class DocumentReferenceRetriever:
         self.auth_client = EsmdAuthClient(config_util=self.config_util)
         self.base_url = self.config_util.get_fhir_server_url()
 
-    def get_document_reference_bundle(self, sender_oid, transaction_status='ready-for-download'):
+    def document_reference_retriever(self, response):
+        """
+        Process the DocumentReference resources from the FHIR response.
+        """
+        if not response or 'entry' not in response:
+            self.logger.warning("Invalid FHIR response received.")
+            return []
+
+        document_references = []
+        for entry in response['entry']:
+            resource = entry.get('resource')
+            if resource and resource['resourceType'] == 'DocumentReference':
+                document_references.append(resource)
+
+        self.logger.info(f"Retrieved {len(document_references)} DocumentReference resources.")
+        return document_references
+
+    def get_document_reference_bundle(self, transactionid=None, transaction_status_type=None):
         """
         Retrieve a bundle of DocumentReference resources using the provided query parameters.
 
-        :param sender_oid: The OID of the sender (required).
-        :param transaction_status: The transaction status (defaults to 'ready-for-download').
+        :param transactionid: The ID of the transaction (optional).
+        :param transaction_status: The transaction status (defaults to 'ready-to-download').
         :return: The bundle of DocumentReference resources or None if there was an error.
         """
-        if not sender_oid:
-            self.logger.error("Sender OID is required but not provided.")
-            return None
-
+     
         try:
             # Get the access token dynamically
             access_token = self.auth_client.get_token()
@@ -44,15 +59,20 @@ class DocumentReferenceRetriever:
                 'Accept': 'application/fhir+json'
             }
 
+          # Prepare the query parameters
+            query_params = {}
+            if transactionid:
+                query_params["transactionid"] = str(transactionid)            
+            if transaction_status_type:
+                query_params["transaction-status-type"] = str(transaction_status_type)
+            else:
+                query_params["transaction-status-type"] = "ready-to-download"
             # Prepare the query parameters
-            query_params = {
-                'senderOid': sender_oid,
-                'trans-status': transaction_status
-            }
+            self.logger.info(f"Retrieving DocumentReference bundle with query parameters: {query_params}")
 
             # Construct the request URL with query parameters
             document_reference_endpoint = f"{self.base_url}/DocumentReference"
-            self.logger.info(f"Retrieving DocumentReference bundle with senderOid={sender_oid} and trans-status={transaction_status}")
+            self.logger.info(f"Retrieving DocumentReference bundle with transactionid={transactionid} and trans-status={transaction_status_type}")
 
             # Sending the GET request to retrieve the DocumentReference bundle
             response = requests.get(document_reference_endpoint, headers=headers, params=query_params)
@@ -80,8 +100,8 @@ class DocumentReferenceRetriever:
             self.logger.exception(f"An unexpected error occurred: {e}")
 
         return None
-    
-    def get_document_reference(self, sender_oid, file_store_location):
+
+    def get_document_reference(self, transactionid=None, transaction_status_type=None, file_store_location=None):
         """
         Retrieve a single DocumentReference resource by its ID.
 
@@ -90,7 +110,7 @@ class DocumentReferenceRetriever:
         """
         
         # Retrieve the document reference bundle
-        bundle_response = self.get_document_reference_bundle(sender_oid)
+        bundle_response = self.get_document_reference_bundle()
 
         # Print the bundle response if retrieved successfully
         if bundle_response:
@@ -99,15 +119,15 @@ class DocumentReferenceRetriever:
             processor = DocumentReferenceProcessor(bundle_response)
             # Extract basic info
             basic_info = processor.extract_basic_info()
-            print("Basic Info:", basic_info)
+            self.logger.info("Basic Info:", basic_info)
 
             # Extract extensions
             extensions = processor.extract_extensions()
-            print("Extensions:", extensions)
+            self.logger.info("Extensions:", extensions)
 
             # Extract identifiers
             identifiers = processor.extract_identifier()
-            print("Identifiers:", identifiers)
+            self.logger.info("Identifiers:", identifiers)
 
             # Fetch binary data for all attachments
             all_binary_data = processor.process_and_get_all_binary_data()
@@ -117,18 +137,62 @@ class DocumentReferenceRetriever:
                 file_name = f"downloaded_attachment_{idx}.pdf"
                 with open(file_name, "wb") as file:
                     file.write(attachment_data['binary_data'])
-                print(f"Attachment {idx} saved as '{file_name}'.")
-            
+                self.logger.info(f"Attachment {idx} saved as '{file_name}'.")
+
         else:
-            print("Failed to retrieve the DocumentReference bundle.")
+            self.logger.error("Failed to retrieve the DocumentReference bundle.")
         pass
+
+    def process_document_reference_bundle(self, document_reference_bundle):
+        """
+        Process a single DocumentReference resource.
+
+        :param document_reference: The DocumentReference resource to process.
+        """
+        if document_reference_bundle and document_reference_bundle.get("resourceType") == "Bundle":
+            for entry in document_reference_bundle.get("entry", []):
+                resource = entry.get("resource")
+                if resource and resource.get("resourceType") == "DocumentReference":
+                    processor = DocumentReferenceProcessor(resource)
+                    # Extract basic info
+                    basic_info = processor.extract_basic_info()
+                    self.logger.info(f"Basic Info: {basic_info}")
+
+                # Extract extensions
+                    extensions = processor.extract_combined_identifiers_extensions()
+                    self.logger.info(f"Extensions: {extensions}")
+                    self.logger.info(f"Esmd-Ext-TransactionId: {extensions.get('Esmd-Ext-TransactionId', '')}")
     
+                # Fetch binary data for all attachments
+                    all_binary_data = processor.process_and_get_all_binary_data(extensions.get('Esmd-Ext-TransactionId', ''))
 
-
-
+                # Print the number of binary data entries fetched
+                    self.logger.info(f"Fetched {len(all_binary_data)} binary data entries.")
+                    self.logger.info(f"Esmd-Ext-TransactionId: {all_binary_data}")
+                else:
+                    self.logger.warning("No DocumentReference resource found in the bundle entry.")
+        elif document_reference_bundle and document_reference_bundle.get("resourceType") == "OperationOutcome":
+            self.logger.error(f"OperationOutcome received: {document_reference_bundle}")
+            for issue in document_reference_bundle.get("issue", []):
+                self.logger.error(f"Issue Severity: {issue.get('severity')}, Code: {issue.get('code')}, Details: {issue.get('details', {}).get('text')}")
+        else:
+              self.logger.warning("The provided resource is not a Bundle or OperationOutcome.")
 # Example usage
 if __name__ == "__main__":
     # Example of sender OID
     sender_oid = "1.2.840.10008.3.1.2.1.1"
 
-    
+    # Example of transaction ID
+    transaction_id = "12345"
+
+    # Example of transaction status type
+    transaction_status_type = "ready-to-download"
+
+    # Example of file store location
+    file_store_location = "/path/to/file/store"
+
+    # Create an instance of the utility class
+    utility = DocumentReferenceRetriever()
+
+    # Call the method with the example parameters
+    document_reference = utility.get_document_reference(transaction_id, transaction_status_type, file_store_location)

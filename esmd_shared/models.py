@@ -292,3 +292,14 @@ class PerformanceMetrics:
     success: bool = True
     error_message: Optional[str] = None
     metadata: Dict[str, Any] = field(default_factory=dict) 
+
+
+@dataclass
+class ProviderDeliveryAckMetadata:
+    transaction_id: str
+    organization_id: str
+    npi: str
+    delivery_datetime: datetime
+    severity: Optional[str] = None
+    code: Optional[str] = None   
+    diagnostics: Optional[str] = None

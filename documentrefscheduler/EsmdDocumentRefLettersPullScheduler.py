@@ -5,10 +5,11 @@ from .EsmdFhirDocumentReferenceDataProcessor import DocumentReferenceProcessor
 from apscheduler.schedulers.blocking import BlockingScheduler
 from esmd_shared.logger import setup_logger
 from notificationscheduler.EsmdFindListTransNotificationUtility import EsmdFindListTransNotificationUtility
-
+from .EsmdFindDocRefUtility import DocumentReferenceRetriever
 class TransactionWithPayloadScheduler:
     def __init__(self):
         self.esmd_utility = EsmdFindListTransNotificationUtility()
+        self.document_reference_retriever = DocumentReferenceRetriever()
         # Set up the logger for this class using the common logger
         self.logger = setup_logger(self.__class__.__name__)
 
@@ -16,45 +17,31 @@ class TransactionWithPayloadScheduler:
         """Fetch notifications and process the list of (uniqueId, status_code) pairs."""
         try:
             # Prepare the list of (uniqueId, status_code) pairs
-            notification_params_metadata = self.esmd_utility.get_find_list_trans_notification_params()
 
-            if notification_params_metadata is None or len(notification_params_metadata) == 0:
-                self.logger.info("No notifications found to process.")
-                return
-
-            # Process each notification pair
-            for notification in notification_params_metadata:
-                unique_id = notification.get('unique_id')
-                status_code = notification.get('status_code')
-
-                if not unique_id or not status_code:
-                    self.logger.warning(f"Invalid notification data: unique_id={unique_id}, status_code={status_code}")
-                    continue
-
-                self.logger.info(f"Scheduling notification for uniqueId: {unique_id}, status_code: {status_code}")
-                self.handle_notification(unique_id, status_code)
+            self.logger.info("Scheduling with default query parameters with status 'ready-to-download'.")
+            self.handle_notification(None, "ready-to-download")           
 
         except Exception as e:
             self.logger.exception(f"An error occurred while scheduling notifications: {e}")
 
-    def handle_notification(self, unique_id, status_code):
+    def handle_notification(self, transactionid, transaction_status_type):
         """Handle the scheduling logic for each notification."""
         try:
-            notifications_response_list = self.esmd_utility.get_find_list_trans_notification(unique_id=unique_id, status_code=status_code)
+            document_reference_bundle = self.document_reference_retriever.get_document_reference_bundle(transactionid=transactionid, transaction_status_type=transaction_status_type)
 
-            if notifications_response_list:
-                self.logger.info(f"Processing notification for uniqueId: {unique_id}")
-                self.esmd_utility.process_notification_list(notifications_response_list)
+            if document_reference_bundle:
+                self.logger.info(f"document_reference_bundle: {document_reference_bundle}")
+                processor = self.document_reference_retriever.process_document_reference_bundle(document_reference_bundle)
             else:
-                self.logger.info(f"No notifications found for uniqueId: {unique_id} and status_code: {status_code}")
+                self.logger.info(f"No notifications found for uniqueId: {transactionid} and transaction_status_type: {transaction_status_type}")
 
             # Logic to schedule or process file downloads, etc.
-            self.logger.info(f"Scheduling file download for uniqueId: {unique_id}")
+            self.logger.info(f"Scheduling file download for uniqueId: {transactionid}")
 
         except requests.exceptions.RequestException as req_err:
-            self.logger.error(f"Request failed for uniqueId: {unique_id} with status_code: {status_code}: {req_err}")
+            self.logger.error(f"Request failed for transactionId: {transactionid} with transaction_status_type: {transaction_status_type}: {req_err}")
         except Exception as e:
-            self.logger.exception(f"An error occurred while handling notification for uniqueId: {unique_id}: {e}")
+            self.logger.exception(f"An error occurred while handling notification for transactionId: {transactionid}: {e}")
 
 
 def run_scheduler():
@@ -64,18 +51,18 @@ def run_scheduler():
         scheduler = BlockingScheduler()
 
         # Create an instance of TransactionWithPayloadScheduler
-        notification_scheduler = TransactionWithPayloadScheduler()
+        document_scheduler = TransactionWithPayloadScheduler()
 
         # Schedule the job to run every 5 minutes
-        scheduler.add_job(notification_scheduler.schedule_payloads, 'interval', minutes=5)
+        scheduler.add_job(document_scheduler.schedule_payloads, 'interval', minutes=1)
 
-        notification_scheduler.logger.info("Scheduler started. Jobs will run every 5 minutes.")
+        document_scheduler.logger.info("Scheduler started. Jobs will run every 5 minutes.")
         scheduler.start()
 
     except (KeyboardInterrupt, SystemExit):
-        notification_scheduler.logger.info("Scheduler stopped gracefully.")
+        document_scheduler.logger.info("Scheduler stopped gracefully.")
     except Exception as e:
-        notification_scheduler.logger.exception(f"An unexpected error occurred: {e}")
+        document_scheduler.logger.exception(f"An unexpected error occurred: {e}")
 
 
 if __name__ == "__main__":

@@ -6,14 +6,23 @@ from .EsmdBinaryFileExtractor import BinaryFileExtractor
 
 class DocumentReferenceProcessor:
     def __init__(self, document_reference_data):
-        try:
-            # Parse the JSON data
-            self.data = json.loads(document_reference_data)
-            self.logger = logging.getLogger(self.__class__.__name__)
-            logging.basicConfig(level=logging.INFO)
-        except json.JSONDecodeError as e:
-            self.logger.error(f"Failed to parse document reference data: {e}")
-            self.data = None
+        """
+        Initializes the DocumentReferenceProcessor with the provided data.
+        """
+        self.data = None
+        self.logger = logging.getLogger(self.__class__.__name__)
+        logging.basicConfig(level=logging.INFO)
+
+        if isinstance(document_reference_data, (str, bytes, bytearray)):
+            try:
+                self.data = json.loads(document_reference_data)
+            except json.JSONDecodeError as e:
+                self.logger.error(f"Failed to parse document reference data: {e}")
+                self.data = None
+        elif isinstance(document_reference_data, dict):
+            self.data = document_reference_data
+        else:
+            raise TypeError("document_reference_data must be a dict or JSON string/bytes")
 
     def extract_basic_info(self):
         """Extracts basic information from the DocumentReference."""
@@ -100,7 +109,7 @@ class DocumentReferenceProcessor:
                 self.logger.warning("Invalid attachment entry found in content.")
         return attachment_info
 
-    def get_binary_data(self, url, esmd_transaction_id, file_output_location="c:/fhir/data/"):
+    def get_binary_data(self, url, esmd_transaction_id, file_output_location="c:\\fhir\\data\\"):
         """Fetches the binary data from the provided URL."""
         if not url:
             self.logger.error("No URL provided to fetch binary data.")

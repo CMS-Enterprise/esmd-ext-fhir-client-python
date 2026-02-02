@@ -53,7 +53,8 @@ def build_all_modules():
         "bundlesubmissionclient",
         "practitionerclient", 
         "documentrefscheduler",
-        "notificationscheduler"
+        "notificationscheduler",
+        "providerdeliveryack"
     ]
     
     print("🚀 Starting module build process...")

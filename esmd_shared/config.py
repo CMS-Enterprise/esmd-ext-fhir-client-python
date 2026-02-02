@@ -340,6 +340,34 @@ class ConfigUtility:
         
         return url
     
+    # Server Configuration Methods
+    def get_fhir_terminology_server_url(self) -> str:
+        """
+        Get FHIR Terminology Server URL from config or environment.
+
+        Returns:
+            str: FHIR Terminology server URL
+        """
+        url = self._get_env_or_config(
+            'ESMD_FHIR_TERMINOLOGY_URL',
+            ['server', 'terminology_url'],
+            'http://localhost:8080/fhir/terminology',
+            required=True
+        )
+
+        # Validate URL format
+        validation = validate_url(url)
+        if not validation.is_valid:
+            raise ValidationError(
+                f"Invalid FHIR Terminology server URL: {url}. {', '.join(validation.errors)}",
+                field="fhir_terminology_server_url",
+                value=url
+            )
+
+        return url        
+        
+
+
     def get_presigned_url_base(self) -> str:
         """Get Presigned URL Base from config or environment."""
         url = self._get_env_or_config(

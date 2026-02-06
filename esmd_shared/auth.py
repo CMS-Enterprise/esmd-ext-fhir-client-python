@@ -145,7 +145,8 @@ class EsmdAuthClient:
         headers = {
             'clientid': self.auth_config.client_id,
             'clientsecret': self.auth_config.client_secret,
-            'Content-Type': 'application/x-www-form-urlencoded'
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'User-Agent': 'Refyne-FHIR-Client/1.0'
         }
         
         if self.auth_config.scope:

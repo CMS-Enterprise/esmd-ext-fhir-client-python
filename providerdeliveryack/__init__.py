@@ -6,11 +6,12 @@ in the esMD FHIR system.
 """
 
 from .EsmdProviderDeliveryAckRequestSubmitter import EsmdProviderDeliveryAckRequestSubmitter
-from .EsmdProviderDeliveryAckResponse import EsmdProviderDeliveryAckResponse
-from .ProviderDeliveryAckMetadata import ProviderDeliveryAckMetadata
+from .EsmdProviderDeliveryAckResponse import ProviderDeliveryAckResponseHandler
+from .ProviderDeliveryAckMetadata import ProviderDeliveryAckMetadataHandler
 
 __all__ = [
     "EsmdProviderDeliveryAckRequestSubmitter",
-    "EsmdProviderDeliveryAckResponse", 
-    "ProviderDeliveryAckMetadata"
+    "ProviderDeliveryAckResponseHandler",
+    "ProviderDeliveryAckMetadataHandler"
 ]
+    

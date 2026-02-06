@@ -11,11 +11,7 @@ class ProviderDeliveryAckResponseHandler:
     def handle_submit_and_verify(self, fhir_list) -> dict:
         """
         Call submit_provider_delivery_ack and verify result.
-        Returns a structured dict:
-         - success: bool
-         - http_status: int (when available)
-         - operation_outcome: dict (if failed and returned by server)
-         - response / error otherwise
+        
         """
         operationOutcome_obj = None
         mapped_issues = []

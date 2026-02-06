@@ -173,8 +173,8 @@ def mock_requests_session():
 def setup_test_environment():
     """Set up test environment variables."""
     test_env_vars = {
-        'ESMD_CLIENT_ID': '2rqs9danur3la1qp7n70cvqdva',
-        'ESMD_CLIENT_SECRET': '23sl7tcqpbvdk83jihuh9e1d3c81crp74vnsccp0i95nijdi34d',
+        'ESMD_CLIENT_ID': '6kk4kfak4ktk7d3gnu0l584lec',
+        'ESMD_CLIENT_SECRET': '1apm85jm5pdo5mlaks79f6vlq8d92v5fde2mt3a52tel2g975slt',
         'ESMD_TOKEN_ENDPOINT': 'https://dev.cpiapigateway.cms.gov/api/esmdp/auth/generate',
         'ESMD_FHIR_SERVER_URL': 'https://dev.cpiapigateway.cms.gov/api/esmdf/v1/fhir',
         'ESMD_LOG_LEVEL': 'INFO'

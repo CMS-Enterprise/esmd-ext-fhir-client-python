@@ -29,7 +29,8 @@ class EsmdProviderDeliveryAckRequestSubmitter:
                 'Accept': 'application/fhir+json'
             }
             response = requests.post(url, headers=headers, data=json.dumps(fhir_list_resource))
-
+            self.logger.info(f"Received response is: {response.json()}")
+            self.logger.info(f"Received response with status code: {response.status_code}")
             return response.json(), response.status_code
 
         except requests.exceptions.HTTPError as errh:

@@ -400,6 +400,20 @@ auth_client = EsmdAuthClient(config_util=config)
 notification_scheduler = NotificationScheduler()
 ```
 
+### Provider Delivery Ack Module
+```python
+from esmd_shared import EsmdAuthClient, ConfigUtility
+from providerdeliveryack.ProviderDeliveryAckMetadata import ProviderDeliveryAckMetadataHandler 
+from esmd_shared.models import ProviderDeliveryAckMetadata, OperationOutcome
+
+# Initialize practitioner client (loads from .env file)
+config = ConfigUtility()  # Automatically loads .env file
+auth_client = EsmdAuthClient(config_util=config)
+metadata = ProviderDeliveryAckMetadataHandler(metadata)
+provider_ack_client = submit_provider_delivery_ack(fhir_list) 
+
+```
+
 ### Shared Utilities Only
 ```python
 from esmd_shared import (
@@ -445,10 +459,14 @@ EsmdFHIRClient/
 ├── practitionerclient/             # Practitioner management
 ├── documentrefscheduler/           # Document reference handling
 ├── notificationscheduler/          # Notification processing
+├── providerdeliveryack/            # Provider Delivery Ack Submission
 ├── tests/                          # Comprehensive test suite
 │   ├── test_shared_*.py           # Shared utility tests
 │   ├── test_bundle_*.py           # Bundle submission tests
 │   ├── test_practitioner_*.py     # Practitioner tests
+│   ├── test_notification_scheduler.py  # Notifications retrieval tests
+│   ├── test_document_retrieval_scheduler.py   # Document retrieval tests
+│   ├── test_provider_delivery_ack.py     # Provider Delivery Ack tests
 │   └── conftest.py                # Shared test fixtures
 ├── config.yaml.template           # Configuration template (optional)
 ├── .env.example                   # Environment variables template
@@ -490,6 +508,11 @@ EsmdFHIRClient/
 - **List Processing**: Transaction notification list handling
 - **Status Tracking**: Notification status monitoring and updates
 - **Scheduling**: Automated notification processing
+
+#### Provider Delivery Ack Submission (`providerdeliveryack/`)
+- **List Preparation**: Creates a FHIR List resource with valid metadata and performs validation.
+- **Submission and Response Processing**: Submits the request to esMD and processes the response.
+
 
 ## 🧪 Testing
 

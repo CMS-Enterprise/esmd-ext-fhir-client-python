@@ -23,7 +23,7 @@ if requirements_file.exists():
 
 setup(
     name='esmd-fhir-client',
-    version='1.0.0',
+    version='1.1.0',
     description='Comprehensive FHIR client for esMD services',
     long_description=long_description,
     long_description_content_type='text/markdown',

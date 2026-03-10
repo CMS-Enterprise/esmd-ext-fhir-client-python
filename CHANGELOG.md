@@ -189,3 +189,22 @@ make type-check
 # All quality checks
 make quality
 ``` 
+
+## [1.1.0] - 2026-04-0 - Major Refactoring and Improvements
+
+### Added
+
+#### 🏗️ Project Structure Improvements
+  - **ProviderDeliveryAck**:  Added the Provider Delivery Ack module with proper logging and exception handling.
+
+  - **AuthAPI**: Added code to enforce the required User-Agent header, as some clients were not populating this header. The User-Agent header is mandatory for all API calls.
+
+
+### Fixed
+
+#### 🐛 Bug Fixes and Improvements
+- **NotificationScheduler**: Fixed invalid search parameters by replacing them with valid parameters, updated the request/response processing logic, and added logging.
+ - **DocumentRefScheduler**: Fixed invalid search parameters by replacing them with valid parameters, updated the request/response processing logic, and added logging.
+
+
+

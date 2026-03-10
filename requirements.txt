@@ -1,0 +1,33 @@
+# EsmdFHIRClient Dependencies
+# Core HTTP and API libraries
+requests>=2.31.0,<3.0.0  # HTTP library with security fixes
+flask>=2.3.0,<3.0.0      # Web framework
+
+# FHIR and Healthcare
+fhirclient>=4.2.0,<5.0.0  # FHIR client library
+
+# Authentication and Security  
+oauthlib>=3.2.2,<4.0.0   # OAuth library with security patches
+
+# Data Processing
+pandas>=2.0.0,<3.0.0     # Data analysis library
+pyyaml>=6.0.1,<7.0.0     # YAML parser with security fixes
+python-dotenv>=1.0.0,<2.0.0  # Environment variable management
+
+# Messaging and Communication
+twilio>=8.10.0,<9.0.0    # Twilio SDK
+pika>=1.3.2,<2.0.0       # RabbitMQ client
+
+# Scheduling
+schedule>=1.2.0,<2.0.0   # Simple scheduling
+apscheduler>=3.10.0,<4.0.0  # Advanced scheduling
+
+# Development and Testing
+pytest>=7.4.0,<8.0.0     # Testing framework
+pytest-cov>=4.1.0,<5.0.0 # Coverage plugin
+black>=23.0.0,<24.0.0    # Code formatter
+flake8>=6.0.0,<7.0.0     # Linting
+mypy>=1.5.0,<2.0.0       # Type checking
+
+# Documentation
+sphinx>=7.1.0,<8.0.0     # Documentation generator

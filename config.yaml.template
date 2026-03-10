@@ -1,0 +1,69 @@
+# EsmdFHIRClient Configuration Template
+# Copy this file to config.yaml and update with your settings
+# For production, consider using environment variables instead
+
+server:
+  # FHIR server endpoints
+  base_url: "http://internal-esmd-dev-apps-986151145.us-east-1.elb.amazonaws.com:9012/fhir"
+  presigned_base_url: "http://internal-esmd-dev-apps-986151145.us-east-1.elb.amazonaws.com:9016/fhir"
+  
+  # Connection settings
+  timeout: 30
+  keep_alive: 120
+  strict_mode: true
+  
+  # Retry configuration
+  max_retries: 3
+  retry_delay: 1.0
+
+auth:
+  # OAuth2 configuration
+  token_endpoint: "https://dev.cpiapigateway.cms.gov/api/esmdp/auth/generate"
+  
+  # Client credentials (consider using environment variables instead)
+  # Set ESMD_CLIENT_ID and ESMD_CLIENT_SECRET environment variables
+  client_id: "your_client_id_here"
+  # client_secret: "DO_NOT_PUT_SECRET_HERE"  # Use ESMD_CLIENT_SECRET env var
+  
+  scope: "hih/pullrcs"
+  grant_type: "client_credentials"
+
+logging:
+  # Logging configuration
+  level: "INFO"  # DEBUG, INFO, WARNING, ERROR, CRITICAL
+  log_file: "logs/esmd_fhir_client.log"
+  
+  # Log rotation settings
+  max_size: 10  # MB
+  max_age: 30   # days
+  max_backups: 5
+  compress: true
+  
+  # Log format
+  format: "%(asctime)s - %(name)s - %(levelname)s - [%(filename)s:%(lineno)d] - %(message)s"
+
+org:
+  # Organization information
+  oid: "urn:oid:1.22.3.44"
+  name: "Your Organization Name"
+
+# Optional: Environment-specific overrides
+environments:
+  development:
+    logging:
+      level: "DEBUG"
+    server:
+      timeout: 60
+      
+  production:
+    logging:
+      level: "INFO"
+      log_file: "/var/log/esmd/fhir_client.log"
+    server:
+      timeout: 30
+
+# Optional: Feature flags
+features:
+  enable_metrics: true
+  enable_health_checks: true
+  enable_request_tracing: false 
